@@ -1,6 +1,7 @@
 package main
 
 import (
+	"crypto/tls"
 	"database/sql"
 	"flag"
 	"html/template"
@@ -24,6 +25,10 @@ type application struct {
 	templateCache  map[string]*template.Template
 	formDecoder    *form.Decoder
 	sessionManager *scs.SessionManager
+}
+
+tlsConfig := &tls.Config{
+	CurvePreferences: []tls.CurveID{tls.X25519, tls.CurveP256},
 }
 
 func openDB(dsn string) (*sql.DB, error) {
@@ -63,6 +68,8 @@ func main() {
 	sessionManager.Store = mysqlstore.New(db)
 	sessionManager.Lifetime = 12 * time.Hour
 
+	sessionManager.Cookie.Secure = true
+
 	app := &application{
 		errorLog:       errorLog,
 		infoLog:        infoLog,
@@ -76,11 +83,14 @@ func main() {
 		Addr:     *addr,
 		ErrorLog: errorLog,
 		Handler:  app.routes(),
+		TLSConfig: tlsConfig,
+		IdleTimeout: time.Minute,
+		ReadTimeout: 5 * time.Second,
+		WriteTimeout: 10 * time.Second,
 	}
 
-	infoLog.Println("Starting server on", *addr)
-	err = srv.ListenAndServe()
-	if err != nil {
-		errorLog.Fatal(err)
-	}
+	infoLog.Printf("Starting server on", *addr)
+	// certs need to be generated accordingly
+	err = srv.ListenAndServeTLS("./tls/cert.pem", "./tls/key.pem")
+	errorLog.Fatal(err)
 }
