@@ -27,10 +27,6 @@ type application struct {
 	sessionManager *scs.SessionManager
 }
 
-tlsConfig := &tls.Config{
-	CurvePreferences: []tls.CurveID{tls.X25519, tls.CurveP256},
-}
-
 func openDB(dsn string) (*sql.DB, error) {
 	db, err := sql.Open("mysql", dsn)
 	if err != nil {
@@ -70,6 +66,10 @@ func main() {
 
 	sessionManager.Cookie.Secure = true
 
+	tlsConfig := &tls.Config{
+		CurvePreferences: []tls.CurveID{tls.X25519, tls.CurveP256},
+	}
+
 	app := &application{
 		errorLog:       errorLog,
 		infoLog:        infoLog,
@@ -80,12 +80,12 @@ func main() {
 	}
 
 	srv := &http.Server{
-		Addr:     *addr,
-		ErrorLog: errorLog,
-		Handler:  app.routes(),
-		TLSConfig: tlsConfig,
-		IdleTimeout: time.Minute,
-		ReadTimeout: 5 * time.Second,
+		Addr:         *addr,
+		ErrorLog:     errorLog,
+		Handler:      app.routes(),
+		TLSConfig:    tlsConfig,
+		IdleTimeout:  time.Minute,
+		ReadTimeout:  5 * time.Second,
 		WriteTimeout: 10 * time.Second,
 	}
 
