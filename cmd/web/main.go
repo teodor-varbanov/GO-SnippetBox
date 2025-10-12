@@ -39,6 +39,10 @@ func openDB(dsn string) (*sql.DB, error) {
 	return db, nil
 }
 
+func (app *application) isAuthenticated(r *http.Request) bool {
+	return app.sessionManager.Exists(r.Context(), "authenticatedUserID")
+}
+
 func main() {
 	addr := flag.String("addr", ":4000", "HTTP port")
 	dsn := flag.String("dsn", "web:placeholder@/snippetbox?parseTime=true", "MySQL data source name")
